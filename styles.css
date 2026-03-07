@@ -1,0 +1,230 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #0d1117;
+  color: #e6edf3;
+  display: flex;
+  min-height: 100vh;
+}
+
+nav {
+  width: 64px;
+  background-color: #161b22;
+  border-right: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  gap: 16px;
+  position: fixed;
+  height: 100vh;
+}
+
+nav .logo {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+nav a {
+  font-size: 20px;
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+nav a:hover {
+  background-color: #21262d;
+}
+
+
+.container {
+  margin-left: 64px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+header p {
+  color: #8b949e;
+  font-size: 13px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.user-info span {
+  font-size: 20px;
+}
+
+main {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 300px;
+  gap: 20px;
+}
+
+
+.card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.card h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8b949e;
+  margin-bottom: 16px;
+}
+
+
+#salas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sala-item {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sala-item.ligada {
+  border-color: #238636;
+  background-color: #0d1f0d;
+}
+
+.sala-nome {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.sala-status {
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+.sala-item.ligada .sala-status {
+  color: #3fb950;
+}
+
+button {
+  background-color: #238636;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background-color: #2ea043;
+}
+
+button.desligar {
+  background-color: #b62324;
+}
+
+button.desligar:hover {
+  background-color: #da3633;
+}
+
+.energia-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.energia-item {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.energia-valor {
+  font-size: 22px;
+  font-weight: bold;
+  color: #f59e0b;
+}
+
+.energia-label {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+
+.sensor-item {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.sensor-nome {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.sensor-sala {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 2px;
+}
+
+.sensor-valor {
+  font-size: 20px;
+  font-weight: bold;
+  color: #06b6d4;
+  margin-top: 6px;
+}
+
+.sensor-status {
+  font-size: 11px;
+  color: #3fb950;
+  margin-top: 2px;
+}

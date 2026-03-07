@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LumiControl</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">💡</div>
+        <a href="#" title="Dashboard">⊞</a>
+        <a href="#" title="Energia">⚡</a>
+        <a href="#" title="Sensores">📡</a>
+        <a href="#" title="Automação">🕐</a>
+        <a href="#" title="Configurações">⚙️</a>
+    </nav>
+
+    <div class="container">
+
+        <header>
+            <div>
+                <h1>💡 LumiControl</h1>
+                <p>Sistema de Iluminação Inteligente</p>
+            </div>
+            <div class="user-info">
+                <span>👤</span>
+                Leonardo
+            </div>
+        </header>
+
+        <main>
+
+            <section class="card">
+                <h2>🏫 Controle das Salas</h2>
+                <div id="salas"></div>
+            </section>
+
+
+            <section class="card">
+                <h2>⚡ Energia</h2>
+                <div class="energia-grid">
+                    <div class="energia-item">
+                        <div class="energia-valor" id="consumo-atual">--</div>
+                        <div class="energia-label">Consumo Atual</div>
+                    </div>
+                    <div class="energia-item">
+                        <div class="energia-valor" id="consumo-hoje">--</div>
+                        <div class="energia-label">Hoje</div>
+                    </div>
+                    <div class="energia-item">
+                        <div class="energia-valor" id="consumo-semana">--</div>
+                        <div class="energia-label">Semana</div>
+                    </div>
+                    <div class="energia-item">
+                        <div class="energia-valor" id="economia">--</div>
+                        <div class="energia-label">Economia</div>
+                    </div>
+                </div>
+            </section>
+
+
+            <section class="card">
+                <h2>📡 Sensores</h2>
+                <div id="sensores"></div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
