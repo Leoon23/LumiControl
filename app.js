@@ -24,9 +24,9 @@ const MOCK = {
   energia: { consumoAtual: 120, consumoHoje: 2.4, consumoSemana: 15.2, economia: 18 }
 }
 
-async function fetchSeguro(url) {
+async function fetchSeguro(url, options) {
   try {
-    const r = await fetch(url)
+    const r = await fetch(url, options)
     if (!r.ok) throw new Error('HTTP ' + r.status)
     return await r.json()
   } catch (e) {
@@ -70,9 +70,7 @@ function mostrarSalas(salas) {
 async function toggleSala(id) {
   const btn = document.querySelector(`#sala-${id} button`)
   if (btn) btn.textContent = '...'
-  // Tenta no backend, se falhar muda só local (pra demo funcionar)
-  const ok = await fetchSeguro(`${API}/salas/${id}`) // seu backend usa PUT, aqui mantemos compatível
-  // Fallback local:
+  await fetchSeguro(`${API}/salas/${id}`, { method: 'PUT' })
   const sala = estado.salas.find(s => s.id === id)
   if (sala) sala.ligada = !sala.ligada
   mostrarSalas(estado.salas)
@@ -125,7 +123,7 @@ function mostrarEnergia(energia) {
 }
 
 async function ligarTodas() {
-  await fetchSeguro(`${API}/salas/ligar-todas`)
+  await fetchSeguro(`${API}/salas/ligar-todas`, { method: 'POST' })
   estado.salas.forEach(s => s.ligada = true)
   mostrarSalas(estado.salas)
   buscarEnergia()
@@ -133,7 +131,7 @@ async function ligarTodas() {
 }
 
 async function desligarTodas() {
-  await fetchSeguro(`${API}/salas/desligar-todas`)
+  await fetchSeguro(`${API}/salas/desligar-todas`, { method: 'POST' })
   estado.salas.forEach(s => s.ligada = false)
   mostrarSalas(estado.salas)
   buscarEnergia()
@@ -231,7 +229,6 @@ function mostrarNotificacao(msg, tipo = 'sucesso') {
 
 function buscarSalaPorNome(texto) {
   const termo = texto.toLowerCase()
-  // Não chama mostrarSalas direto, filtra visualmente
   document.querySelectorAll('.sala-item').forEach(item => {
     const nome = item.querySelector('.sala-nome')?.textContent.toLowerCase() || ''
     item.style.display = nome.includes(termo) ? '' : 'none'
@@ -242,7 +239,6 @@ function ordenarSalas(criterio) {
   let copia = [...estado.salas]
   if (criterio === 'nome') copia.sort((a, b) => a.name.localeCompare(b.name))
   if (criterio === 'ligadas-primeiro') copia.sort((a, b) => Number(b.ligada) - Number(a.ligada))
-  // Salva ordenado e mostra sem refiltrar errado
   estado.salas = copia
   mostrarSalas(copia)
 }
@@ -313,7 +309,6 @@ function iniciar() {
   setInterval(modoNoturnoAutomatico, 60000)
 }
 
-// Espera o HTML carregar antes de rodar
 document.addEventListener('DOMContentLoaded', () => {
   iniciar()
   atualizarStats()
