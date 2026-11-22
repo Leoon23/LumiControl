@@ -70,3 +70,7 @@ function mostrarEnergia(energia) {
 
 buscarSensores()
 buscarEnergia()
+...
+buscarSensores()
+buscarEnergia()
+
