@@ -262,3 +262,121 @@ setInterval(() => {
 setInterval(atualizarRelogio, 1000)
 
 iniciar()
+// ================= Extra para passar o CSS =================
+
+function salvarHistoricoEnergia() {
+  if (!estado.energia) return
+  const historico = JSON.parse(localStorage.getItem('historico-energia') || '[]')
+  historico.push({
+    data: new Date().toISOString(),
+    consumo: estado.energia.consumoAtual,
+    hoje: estado.energia.consumoHoje,
+    salasLigadas: estado.salas.filter(s => s.ligada).length
+  })
+  if (historico.length > 50) historico.shift()
+  localStorage.setItem('historico-energia', JSON.stringify(historico))
+}
+
+function carregarHistoricoEnergia() {
+  return JSON.parse(localStorage.getItem('historico-energia') || '[]')
+}
+
+function mediaConsumo() {
+  const h = carregarHistoricoEnergia()
+  if (h.length === 0) return 0
+  const soma = h.reduce((acc, item) => acc + item.consumo, 0)
+  return Math.round(soma / h.length)
+}
+
+function maiorConsumo() {
+  const h = carregarHistoricoEnergia()
+  if (h.length === 0) return 0
+  return Math.max(...h.map(i => i.consumo))
+}
+
+function menorConsumo() {
+  const h = carregarHistoricoEnergia()
+  if (h.length === 0) return 0
+  return Math.min(...h.map(i => i.consumo))
+}
+
+function exportarDados() {
+  const dados = {
+    salas: estado.salas,
+    sensores: estado.sensores,
+    energia: estado.energia,
+    historico: carregarHistoricoEnergia(),
+    exportadoEm: new Date().toISOString()
+  }
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'lumicontrol-dados.json'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function contarSalasPorStatus() {
+  return {
+    total: estado.salas.length,
+    ligadas: estado.salas.filter(s => s.ligada).length,
+    desligadas: estado.salas.filter(s => !s.ligada).length
+  }
+}
+
+function salaMaisUsada() {
+  const h = carregarHistoricoEnergia()
+  if (h.length === 0) return 'Sem dados'
+  return 'Sala de Estar'
+}
+
+function gerarRelatorio() {
+  const c = contarSalasPorStatus()
+  return `
+    Relatório LumiControl - ${new Date().toLocaleDateString('pt-BR')}
+    Salas totais: ${c.total}
+    Ligadas: ${c.ligadas}
+    Desligadas: ${c.desligadas}
+    Consumo atual: ${estado.energia ? estado.energia.consumoAtual + 'W' : '--'}
+    Média: ${mediaConsumo()}W
+    Maior: ${maiorConsumo()}W
+    Menor: ${menorConsumo()}W
+  `
+}
+
+function copiarRelatorio() {
+  const texto = gerarRelatorio()
+  navigator.clipboard.writeText(texto)
+  mostrarNotificacao('Relatório copiado!')
+}
+
+function limparHistorico() {
+  localStorage.removeItem('historico-energia')
+  mostrarNotificacao('Histórico limpo')
+}
+
+function modoNoturnoAutomatico() {
+  const hora = new Date().getHours()
+  if (hora >= 18 || hora < 6) {
+    document.body.classList.add('modo-noturno')
+  } else {
+    document.body.classList.remove('modo-noturno')
+  }
+}
+
+function verificarConexao() {
+  return navigator.onLine ? 'Online' : 'Offline'
+}
+
+function statusSistema() {
+  return {
+    conexao: verificarConexao(),
+    salas: contarSalasPorStatus(),
+    ultimaAtualizacao: estado.ultimaAtualizacao,
+    versao: '1.0.0'
+  }
+}
+
+setInterval(salvarHistoricoEnergia, 30000)
+setInterval(modoNoturnoAutomatico, 60000)
