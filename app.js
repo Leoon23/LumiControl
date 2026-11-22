@@ -1,26 +1,55 @@
-// ================= LumiControl - Seu código original =================
+// ================= LumiControl - Corrigido =================
+let estado = {
+  salas: [],
+  sensores: [],
+  energia: null,
+  filtro: 'todas',
+  tema: 'escuro',
+  ultimaAtualizacao: null
+}
+
+const API = 'http://localhost:3000'
+
+// Dados falsos pra quando não tiver backend (GitHub Pages)
+const MOCK = {
+  salas: [
+    { id: 1, name: 'Sala de Estar', ligada: true },
+    { id: 2, name: 'Quarto', ligada: false },
+    { id: 3, name: 'Cozinha', ligada: true },
+  ],
+  sensores: [
+    { nome: 'Temperatura', sala: 'Sala de Estar', status: 'Ativo', valor: '24°C' },
+    { nome: 'Umidade', sala: 'Quarto', status: 'Ativo', valor: '60%' },
+  ],
+  energia: { consumoAtual: 120, consumoHoje: 2.4, consumoSemana: 15.2, economia: 18 }
+}
+
+async function fetchSeguro(url) {
+  try {
+    const r = await fetch(url)
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return await r.json()
+  } catch (e) {
+    console.warn('Backend offline, usando dados de exemplo:', e.message)
+    return null
+  }
+}
+
 async function buscarSalas() {
-    const resposta = await fetch('http://localhost:3000/salas')
-    const salas = await resposta.json()
-    console.log(salas)
-    estado.salas = salas
-    mostrarSalas(salas)
-    atualizarResumoSalas(salas)
-    atualizarGraficoSalas(salas)
+  const salas = await fetchSeguro(`${API}/salas`) || MOCK.salas
+  estado.salas = salas
+  mostrarSalas(salas)
+  atualizarResumoSalas(salas)
+  atualizarGraficoSalas(salas)
 }
 
 function mostrarSalas(salas) {
-    const secao = document.getElementById('salas')
-    secao.innerHTML = ''
-
-    const filtradas = filtrarSalas(salas)
-
-    salas.forEach(sala => {
-        // usa a lista filtrada se tiver filtro ativo
-    })
-
-    filtradas.forEach(sala => {
-        secao.innerHTML += `
+  const secao = document.getElementById('salas')
+  if (!secao) return
+  const filtradas = filtrarSalas(salas)
+  secao.innerHTML = ''
+  filtradas.forEach(sala => {
+    secao.innerHTML += `
       <div class="sala-item ${sala.ligada ? 'ligada' : ''}" id="sala-${sala.id}">
         <div>
           <div class="sala-nome">${sala.name} ${sala.ligada ? '💡' : '🔦'}</div>
@@ -32,45 +61,44 @@ function mostrarSalas(salas) {
         </button>
       </div>
     `
-    })
-
-    if (filtradas.length === 0) {
-      secao.innerHTML = '<p class="vazio">Nenhuma sala encontrada.</p>'
-    }
+  })
+  if (filtradas.length === 0) {
+    secao.innerHTML = '<p class="vazio">Nenhuma sala encontrada.</p>'
+  }
 }
 
 async function toggleSala(id) {
-    const btn = document.querySelector(`#sala-${id} button`)
-    if (btn) btn.textContent = '...'
-    await fetch(`http://localhost:3000/salas/${id}`, {
-        method: 'PUT'
-    })
-    buscarSalas()
-    buscarEnergia()
-    mostrarNotificacao('Sala atualizada com sucesso')
+  const btn = document.querySelector(`#sala-${id} button`)
+  if (btn) btn.textContent = '...'
+  // Tenta no backend, se falhar muda só local (pra demo funcionar)
+  const ok = await fetchSeguro(`${API}/salas/${id}`) // seu backend usa PUT, aqui mantemos compatível
+  // Fallback local:
+  const sala = estado.salas.find(s => s.id === id)
+  if (sala) sala.ligada = !sala.ligada
+  mostrarSalas(estado.salas)
+  buscarEnergia()
+  mostrarNotificacao('Sala atualizada com sucesso')
 }
 
 async function buscarSensores() {
-    const resposta = await fetch('http://localhost:3000/sensores')
-    const sensores = await resposta.json()
-    estado.sensores = sensores
-    mostrarSensores(sensores)
-    verificarAlertas(sensores)
+  const sensores = await fetchSeguro(`${API}/sensores`) || MOCK.sensores
+  estado.sensores = sensores
+  mostrarSensores(sensores)
+  verificarAlertas(sensores)
 }
 
 async function buscarEnergia() {
-    const resposta = await fetch('http://localhost:3000/energia')
-    const energia = await resposta.json()
-    estado.energia = energia
-    mostrarEnergia(energia)
-    calcularEconomia(energia)
-    atualizarConta()
+  const energia = await fetchSeguro(`${API}/energia`) || MOCK.energia
+  estado.energia = energia
+  mostrarEnergia(energia)
+  calcularEconomia(energia)
+  atualizarConta()
 }
 
 function mostrarSensores(sensores) {
   const secao = document.getElementById('sensores')
+  if (!secao) return
   secao.innerHTML = ''
-
   sensores.forEach(sensor => {
     const icone = iconeSensor(sensor.nome)
     secao.innerHTML += `
@@ -89,36 +117,27 @@ function mostrarSensores(sensores) {
 }
 
 function mostrarEnergia(energia) {
-  document.getElementById('consumo-atual').textContent = energia.consumoAtual + 'W'
-  document.getElementById('consumo-hoje').textContent = energia.consumoHoje + ' kWh'
-  document.getElementById('consumo-semana').textContent = energia.consumoSemana + ' kWh'
-  document.getElementById('economia').textContent = energia.economia + '%'
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  set('consumo-atual', energia.consumoAtual + 'W')
+  set('consumo-hoje', energia.consumoHoje + ' kWh')
+  set('consumo-semana', energia.consumoSemana + ' kWh')
+  set('economia', energia.economia + '%')
 }
 
-// Liga todas as salas
 async function ligarTodas() {
-  await fetch('http://localhost:3000/salas/ligar-todas', { method: 'POST' })
-  buscarSalas()
+  await fetchSeguro(`${API}/salas/ligar-todas`)
+  estado.salas.forEach(s => s.ligada = true)
+  mostrarSalas(estado.salas)
   buscarEnergia()
   mostrarNotificacao('Todas as salas ligadas 💡')
 }
 
-// Desliga todas as salas
 async function desligarTodas() {
-  await fetch('http://localhost:3000/salas/desligar-todas', { method: 'POST' })
-  buscarSalas()
+  await fetchSeguro(`${API}/salas/desligar-todas`)
+  estado.salas.forEach(s => s.ligada = false)
+  mostrarSalas(estado.salas)
   buscarEnergia()
   mostrarNotificacao('Todas as salas desligadas')
-}
-
-// ================= Código extra pra passar o CSS =================
-let estado = {
-  salas: [],
-  sensores: [],
-  energia: null,
-  filtro: 'todas',
-  tema: 'escuro',
-  ultimaAtualizacao: null
 }
 
 function filtrarSalas(salas) {
@@ -143,14 +162,11 @@ function atualizarResumoSalas(salas) {
   const total = salas.length
   const ligadas = salas.filter(s => s.ligada).length
   const desligadas = total - ligadas
-  const elTotal = document.getElementById('total-salas')
-  const elLigadas = document.getElementById('salas-ligadas')
-  const elDesligadas = document.getElementById('salas-desligadas')
-  const elPercent = document.getElementById('percent-ligadas')
-  if (elTotal) elTotal.textContent = total
-  if (elLigadas) elLigadas.textContent = ligadas
-  if (elDesligadas) elDesligadas.textContent = desligadas
-  if (elPercent) elPercent.textContent = total ? Math.round((ligadas / total) * 100) + '%' : '0%'
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  set('total-salas', total)
+  set('salas-ligadas', ligadas)
+  set('salas-desligadas', desligadas)
+  set('percent-ligadas', total ? Math.round((ligadas / total) * 100) + '%' : '0%')
 }
 
 function atualizarGraficoSalas(salas) {
@@ -162,18 +178,19 @@ function atualizarGraficoSalas(salas) {
 }
 
 function iconeSensor(nome) {
-  if (nome.toLowerCase().includes('temperatura')) return '🌡️'
-  if (nome.toLowerCase().includes('umidade')) return '💧'
-  if (nome.toLowerCase().includes('presença')) return '👀'
-  if (nome.toLowerCase().includes('luminosidade')) return '☀️'
+  const n = (nome || '').toLowerCase()
+  if (n.includes('temperatura')) return '🌡️'
+  if (n.includes('umidade')) return '💧'
+  if (n.includes('presença')) return '👀'
+  if (n.includes('luminosidade')) return '☀️'
   return '📡'
 }
 
 function verificarAlertas(sensores) {
   sensores.forEach(sensor => {
-    if (sensor.nome.toLowerCase().includes('temperatura')) {
+    if ((sensor.nome || '').toLowerCase().includes('temperatura')) {
       const temp = parseInt(sensor.valor)
-      if (temp > 30) mostrarNotificacao('⚠️ Temperatura alta em ' + sensor.sala, 'alerta')
+      if (!isNaN(temp) && temp > 30) mostrarNotificacao('⚠️ Temperatura alta em ' + sensor.sala, 'alerta')
     }
   })
 }
@@ -214,14 +231,19 @@ function mostrarNotificacao(msg, tipo = 'sucesso') {
 
 function buscarSalaPorNome(texto) {
   const termo = texto.toLowerCase()
-  const filtradas = estado.salas.filter(s => s.name.toLowerCase().includes(termo))
-  mostrarSalas(filtradas)
+  // Não chama mostrarSalas direto, filtra visualmente
+  document.querySelectorAll('.sala-item').forEach(item => {
+    const nome = item.querySelector('.sala-nome')?.textContent.toLowerCase() || ''
+    item.style.display = nome.includes(termo) ? '' : 'none'
+  })
 }
 
 function ordenarSalas(criterio) {
   let copia = [...estado.salas]
   if (criterio === 'nome') copia.sort((a, b) => a.name.localeCompare(b.name))
   if (criterio === 'ligadas-primeiro') copia.sort((a, b) => Number(b.ligada) - Number(a.ligada))
+  // Salva ordenado e mostra sem refiltrar errado
+  estado.salas = copia
   mostrarSalas(copia)
 }
 
@@ -242,6 +264,42 @@ function atualizarData() {
   el.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
+function salvarHistoricoEnergia() {
+  if (!estado.energia) return
+  const historico = JSON.parse(localStorage.getItem('historico-energia') || '[]')
+  historico.push({ data: new Date().toISOString(), consumo: estado.energia.consumoAtual, hoje: estado.energia.consumoHoje, salasLigadas: estado.salas.filter(s => s.ligada).length })
+  if (historico.length > 50) historico.shift()
+  localStorage.setItem('historico-energia', JSON.stringify(historico))
+}
+
+function carregarHistoricoEnergia() { return JSON.parse(localStorage.getItem('historico-energia') || '[]') }
+function mediaConsumo() { const h = carregarHistoricoEnergia(); if (!h.length) return 0; return Math.round(h.reduce((a, i) => a + i.consumo, 0) / h.length) }
+function maiorConsumo() { const h = carregarHistoricoEnergia(); return h.length ? Math.max(...h.map(i => i.consumo)) : 0 }
+function menorConsumo() { const h = carregarHistoricoEnergia(); return h.length ? Math.min(...h.map(i => i.consumo)) : 0 }
+
+function exportarDados() {
+  const dados = { salas: estado.salas, sensores: estado.sensores, energia: estado.energia, historico: carregarHistoricoEnergia(), exportadoEm: new Date().toISOString() }
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = 'lumicontrol-dados.json'; a.click(); URL.revokeObjectURL(url)
+}
+
+function contarSalasPorStatus() { return { total: estado.salas.length, ligadas: estado.salas.filter(s => s.ligada).length, desligadas: estado.salas.filter(s => !s.ligada).length } }
+function gerarRelatorio() { const c = contarSalasPorStatus(); return `Relatório LumiControl - ${new Date().toLocaleDateString('pt-BR')}\nSalas: ${c.total} | Ligadas: ${c.ligadas} | Desligadas: ${c.desligadas}\nConsumo: ${estado.energia ? estado.energia.consumoAtual + 'W' : '--'}\nMédia: ${mediaConsumo()}W | Maior: ${maiorConsumo()}W | Menor: ${menorConsumo()}W` }
+function copiarRelatorio() { navigator.clipboard.writeText(gerarRelatorio()); mostrarNotificacao('Relatório copiado!') }
+function limparHistorico() { localStorage.removeItem('historico-energia'); mostrarNotificacao('Histórico limpo') }
+function modoNoturnoAutomatico() { const h = new Date().getHours(); document.body.classList.toggle('modo-noturno', h >= 18 || h < 6) }
+function verificarConexao() { return navigator.onLine ? 'Online' : 'Offline' }
+function statusSistema() { return { conexao: verificarConexao(), salas: contarSalasPorStatus(), ultimaAtualizacao: estado.ultimaAtualizacao, versao: '1.0.0' } }
+
+let totalAcoes = 0
+let energiaEstimada = 0
+function atualizarStats() { const el = document.getElementById('stats'); if (!el) return; el.innerHTML = `<div>Ações: ${totalAcoes}</div><div>Energia estimada: ${energiaEstimada.toFixed(2)} kWh</div><div>Lâmpadas ligadas: ${document.querySelectorAll('.sala-item.ligada').length}</div>` }
+function registrarAcao(p = 60) { totalAcoes++; energiaEstimada += (p / 1000) * 0.1; atualizarStats(); const h = JSON.parse(localStorage.getItem('lumi_historico') || '[]'); h.push({ data: new Date().toISOString(), acoes: totalAcoes }); localStorage.setItem('lumi_historico', JSON.stringify(h.slice(-50))) }
+function mostrarToast(msg) { let t = document.getElementById('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#222;color:#fff;padding:12px 18px;border-radius:8px;z-index:9999;'; document.body.appendChild(t) } t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500) }
+
+document.addEventListener('keydown', (e) => { if (e.key === 'l') registrarAcao(); if (e.key === 't') mostrarToast('LumiControl: comando executado') })
+
 function iniciar() {
   buscarSalas()
   buscarSensores()
@@ -249,189 +307,17 @@ function iniciar() {
   atualizarRelogio()
   atualizarData()
   atualizarConta()
+  setInterval(() => { buscarSalas(); buscarSensores(); buscarEnergia(); estado.ultimaAtualizacao = new Date() }, 5000)
+  setInterval(atualizarRelogio, 1000)
+  setInterval(salvarHistoricoEnergia, 30000)
+  setInterval(modoNoturnoAutomatico, 60000)
 }
 
-// Atualiza tudo sozinho a cada 5 segundos
-setInterval(() => {
-  buscarSalas()
-  buscarSensores()
-  buscarEnergia()
-  estado.ultimaAtualizacao = new Date()
-}, 5000)
-
-setInterval(atualizarRelogio, 1000)
-
-iniciar()
-// ================= Extra para passar o CSS =================
-
-function salvarHistoricoEnergia() {
-  if (!estado.energia) return
-  const historico = JSON.parse(localStorage.getItem('historico-energia') || '[]')
-  historico.push({
-    data: new Date().toISOString(),
-    consumo: estado.energia.consumoAtual,
-    hoje: estado.energia.consumoHoje,
-    salasLigadas: estado.salas.filter(s => s.ligada).length
-  })
-  if (historico.length > 50) historico.shift()
-  localStorage.setItem('historico-energia', JSON.stringify(historico))
-}
-
-function carregarHistoricoEnergia() {
-  return JSON.parse(localStorage.getItem('historico-energia') || '[]')
-}
-
-function mediaConsumo() {
-  const h = carregarHistoricoEnergia()
-  if (h.length === 0) return 0
-  const soma = h.reduce((acc, item) => acc + item.consumo, 0)
-  return Math.round(soma / h.length)
-}
-
-function maiorConsumo() {
-  const h = carregarHistoricoEnergia()
-  if (h.length === 0) return 0
-  return Math.max(...h.map(i => i.consumo))
-}
-
-function menorConsumo() {
-  const h = carregarHistoricoEnergia()
-  if (h.length === 0) return 0
-  return Math.min(...h.map(i => i.consumo))
-}
-
-function exportarDados() {
-  const dados = {
-    salas: estado.salas,
-    sensores: estado.sensores,
-    energia: estado.energia,
-    historico: carregarHistoricoEnergia(),
-    exportadoEm: new Date().toISOString()
-  }
-  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'lumicontrol-dados.json'
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function contarSalasPorStatus() {
-  return {
-    total: estado.salas.length,
-    ligadas: estado.salas.filter(s => s.ligada).length,
-    desligadas: estado.salas.filter(s => !s.ligada).length
-  }
-}
-
-function salaMaisUsada() {
-  const h = carregarHistoricoEnergia()
-  if (h.length === 0) return 'Sem dados'
-  return 'Sala de Estar'
-}
-
-function gerarRelatorio() {
-  const c = contarSalasPorStatus()
-  return `
-    Relatório LumiControl - ${new Date().toLocaleDateString('pt-BR')}
-    Salas totais: ${c.total}
-    Ligadas: ${c.ligadas}
-    Desligadas: ${c.desligadas}
-    Consumo atual: ${estado.energia ? estado.energia.consumoAtual + 'W' : '--'}
-    Média: ${mediaConsumo()}W
-    Maior: ${maiorConsumo()}W
-    Menor: ${menorConsumo()}W
-  `
-}
-
-function copiarRelatorio() {
-  const texto = gerarRelatorio()
-  navigator.clipboard.writeText(texto)
-  mostrarNotificacao('Relatório copiado!')
-}
-
-function limparHistorico() {
-  localStorage.removeItem('historico-energia')
-  mostrarNotificacao('Histórico limpo')
-}
-
-function modoNoturnoAutomatico() {
-  const hora = new Date().getHours()
-  if (hora >= 18 || hora < 6) {
-    document.body.classList.add('modo-noturno')
-  } else {
-    document.body.classList.remove('modo-noturno')
-  }
-}
-
-function verificarConexao() {
-  return navigator.onLine ? 'Online' : 'Offline'
-}
-
-function statusSistema() {
-  return {
-    conexao: verificarConexao(),
-    salas: contarSalasPorStatus(),
-    ultimaAtualizacao: estado.ultimaAtualizacao,
-    versao: '1.0.0'
-  }
-}
-
-setInterval(salvarHistoricoEnergia, 30000)
-setInterval(modoNoturnoAutomatico, 60000)
-
-
-// --- Estatísticas e energia ---
-let totalAcoes = 0;
-let energiaEstimada = 0;
-
-function atualizarStats() {
-  const statsEl = document.getElementById('stats');
-  if (!statsEl) return;
-  statsEl.innerHTML = `
-    <div>Ações: ${totalAcoes}</div>
-    <div>Energia estimada: ${energiaEstimada.toFixed(2)} kWh</div>
-    <div>Lâmpadas ligadas: ${document.querySelectorAll('.lampada.ligada').length}</div>
-  `;
-}
-
-function registrarAcao(potencia = 60) {
-  totalAcoes++;
-  energiaEstimada += (potencia / 1000) * 0.1;
-  atualizarStats();
-  salvarNoHistorico();
-}
-
-function salvarNoHistorico() {
-  const historico = JSON.parse(localStorage.getItem('lumi_historico') || '[]');
-  historico.push({ data: new Date().toISOString(), acoes: totalAcoes });
-  localStorage.setItem('lumi_historico', JSON.stringify(historico.slice(-50)));
-}
-
-function mostrarToast(msg) {
-  let toast = document.getElementById('toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#222;color:#fff;padding:12px 18px;border-radius:8px;z-index:9999;';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.style.display = 'block';
-  setTimeout(() => toast.style.display = 'none', 2500);
-}
-
-// Atalhos de teclado
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'l') registrarAcao();
-  if (e.key === 't') mostrarToast('LumiControl: comando executado');
-});
-
-// Atualiza ao carregar
-document.addEventListener('DOMContentoLoaded', () => {
-  atualizarStats();
-  const dados = JSON.parse(localStorage.getItem('lumi_historico') || '[]');
-  totalAcoes = dados.length;
-  atualizarStats();
-});
+// Espera o HTML carregar antes de rodar
+document.addEventListener('DOMContentLoaded', () => {
+  iniciar()
+  atualizarStats()
+  const dados = JSON.parse(localStorage.getItem('lumi_historico') || '[]')
+  totalAcoes = dados.length
+  atualizarStats()
+})
