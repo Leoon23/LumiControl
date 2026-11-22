@@ -3,7 +3,7 @@ const app = express()
 
 app.use(express.json())
 
-// CORS - sem isso o navegador bloqueia o fetch se o front estiver em outra porta
+// CORS - sem isso o navegador bloqueia o fetch
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
   res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE')
