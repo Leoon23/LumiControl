@@ -382,4 +382,56 @@ setInterval(salvarHistoricoEnergia, 30000)
 setInterval(modoNoturnoAutomatico, 60000)
 
 
+// --- Estatísticas e energia ---
+let totalAcoes = 0;
+let energiaEstimada = 0;
 
+function atualizarStats() {
+  const statsEl = document.getElementById('stats');
+  if (!statsEl) return;
+  statsEl.innerHTML = `
+    <div>Ações: ${totalAcoes}</div>
+    <div>Energia estimada: ${energiaEstimada.toFixed(2)} kWh</div>
+    <div>Lâmpadas ligadas: ${document.querySelectorAll('.lampada.ligada').length}</div>
+  `;
+}
+
+function registrarAcao(potencia = 60) {
+  totalAcoes++;
+  energiaEstimada += (potencia / 1000) * 0.1;
+  atualizarStats();
+  salvarNoHistorico();
+}
+
+function salvarNoHistorico() {
+  const historico = JSON.parse(localStorage.getItem('lumi_historico') || '[]');
+  historico.push({ data: new Date().toISOString(), acoes: totalAcoes });
+  localStorage.setItem('lumi_historico', JSON.stringify(historico.slice(-50)));
+}
+
+function mostrarToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#222;color:#fff;padding:12px 18px;border-radius:8px;z-index:9999;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 2500);
+}
+
+// Atalhos de teclado
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'l') registrarAcao();
+  if (e.key === 't') mostrarToast('LumiControl: comando executado');
+});
+
+// Atualiza ao carregar
+document.addEventListener('DOMContentoLoaded', () => {
+  atualizarStats();
+  const dados = JSON.parse(localStorage.getItem('lumi_historico') || '[]');
+  totalAcoes = dados.length;
+  atualizarStats();
+});
