@@ -42,7 +42,6 @@ nav a:hover {
   background-color: #21262d;
 }
 
-
 .container {
   margin-left: 64px;
   flex: 1;
@@ -92,7 +91,6 @@ main {
   gap: 20px;
 }
 
-
 .card {
   background-color: #161b22;
   border: 1px solid #30363d;
@@ -107,7 +105,6 @@ main {
   color: #8b949e;
   margin-bottom: 16px;
 }
-
 
 #salas {
   display: flex;
@@ -196,7 +193,6 @@ button.desligar:hover {
   text-transform: uppercase;
 }
 
-
 .sensor-item {
   background-color: #21262d;
   border: 1px solid #30363d;
@@ -223,8 +219,4 @@ button.desligar:hover {
   margin-top: 6px;
 }
 
-.sensor-status {
-  font-size: 11px;
-  color: #3fb950;
-  margin-top: 2px;
-}
+/* atualizado para recalcular linguagem */
