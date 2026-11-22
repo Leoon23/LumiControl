@@ -380,3 +380,6 @@ function statusSistema() {
 
 setInterval(salvarHistoricoEnergia, 30000)
 setInterval(modoNoturnoAutomatico, 60000)
+
+
+
