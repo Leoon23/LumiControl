@@ -2,6 +2,16 @@ const express = require('express')
 const app = express()
 
 app.use(express.json())
+
+// CORS - sem isso o navegador bloqueia o fetch se o front estiver em outra porta
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE')
+  res.header('Access-Control-Allow-Headers', 'Content-Type')
+  if (req.method === 'OPTIONS') return res.sendStatus(200)
+  next()
+})
+
 app.use(express.static('.'))
 
 const salas = [
@@ -11,7 +21,7 @@ const salas = [
 ]
 
 const sensores = [
-  { id: 1, nome: 'Sensor de Movimento', sala: 'Sala A', status: 'Detectado' },
+  { id: 1, nome: 'Sensor de Movimento', sala: 'Sala A', status: 'Detectado', valor: '--' },
   { id: 2, nome: 'Sensor de Luz', sala: 'Sala A', valor: '270 lx', status: 'Ativo' },
   { id: 3, nome: 'Temperatura', sala: 'Corredor', valor: '24.5°C', status: 'Ativo' }
 ]
@@ -21,6 +31,12 @@ const energia = {
   consumoHoje: 3.2,
   consumoSemana: 18.5,
   economia: 12.4
+}
+
+function recalcularEnergia() {
+  const ligadas = salas.filter(s => s.ligada).length
+  energia.consumoAtual = 680 + (ligadas * 120)
+  if (energia.consumoAtual < 0) energia.consumoAtual = 0
 }
 
 app.get('/', (req, res) => {
@@ -34,20 +50,9 @@ app.get('/salas', (req, res) => {
 app.put('/salas/:id', (req, res) => {
   const id = parseInt(req.params.id)
   const sala = salas.find(s => s.id === id)
-
-  if (!sala) {
-    return res.status(404).json({ erro: 'Sala não encontrada' })
-  }
-
+  if (!sala) return res.status(404).json({ erro: 'Sala não encontrada' })
   sala.ligada = !sala.ligada
-
-  // Atualiza consumo quando liga/desliga
-  if (sala.ligada) {
-    energia.consumoAtual += 120
-  } else {
-    energia.consumoAtual -= 120
-  }
-
+  recalcularEnergia()
   res.json(sala)
 })
 
@@ -59,20 +64,19 @@ app.get('/energia', (req, res) => {
   res.json(energia)
 })
 
-// Liga todas as salas de uma vez
 app.post('/salas/ligar-todas', (req, res) => {
   salas.forEach(sala => sala.ligada = true)
-  energia.consumoAtual = 680 + (salas.length * 120)
+  recalcularEnergia()
   res.json({ mensagem: 'Todas as salas ligadas', salas })
 })
 
-// Desliga todas
 app.post('/salas/desligar-todas', (req, res) => {
   salas.forEach(sala => sala.ligada = false)
-  energia.consumoAtual = 680
+  recalcularEnergia()
   res.json({ mensagem: 'Todas as salas desligadas', salas })
 })
 
-app.listen(3000, () => {
-  console.log('LumiControl rodando na porta 3000')
+const PORT = 3000
+app.listen(PORT, () => {
+  console.log(`LumiControl rodando na porta ${PORT}`)
 })
