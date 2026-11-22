@@ -1,4 +1,3 @@
-
 async function buscarSalas() {
     const resposta = await fetch('http://localhost:3000/salas')
     const salas = await resposta.json()
@@ -39,7 +38,6 @@ async function buscarSensores() {
     mostrarSensores(sensores)
 }
 
-
 async function buscarEnergia() {
     const resposta = await fetch('http://localhost:3000/energia')
     const energia = await resposta.json()
@@ -70,7 +68,26 @@ function mostrarEnergia(energia) {
 
 buscarSensores()
 buscarEnergia()
-...
-buscarSensores()
-buscarEnergia()
+
+// Liga todas as salas
+async function ligarTodas() {
+  await fetch('http://localhost:3000/salas/ligar-todas', { method: 'POST' })
+  buscarSalas()
+  buscarEnergia()
+}
+
+// Desliga todas as salas
+async function desligarTodas() {
+  await fetch('http://localhost:3000/salas/desligar-todas', { method: 'POST' })
+  buscarSalas()
+  buscarEnergia()
+}
+
+// Atualiza tudo sozinho a cada 5 segundos
+setInterval(() => {
+  buscarSalas()
+  buscarSensores()
+  buscarEnergia()
+}, 5000)
+
 
